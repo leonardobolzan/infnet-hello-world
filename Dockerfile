@@ -8,9 +8,6 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install
 
-# Copia o .env para o container
-COPY .env ./
-
 # Copia o restante dos arquivos para dentro do container
 COPY . .
 
