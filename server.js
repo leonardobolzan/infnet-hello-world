@@ -1,21 +1,105 @@
 const express = require("express");
-const client = require('prom-client');
+const prometheus = require("prom-client");
+const redis = require("redis");
 
 const app = express();
-const collectDefaultMetrics = client.collectDefaultMetrics;
-collectDefaultMetrics();
-
 const PORT = process.env.PORT || 80;
 
-app.get('/metrics', async (req, res) => {
-    res.set('Content-Type', client.register.contentType);
-    res.end(await client.register.metrics());
+// Configuração do Redis
+let redisClient;
+(async () => {
+  try {
+    redisClient = redis.createClient({
+      // url: `redis://default:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:6379`
+      url: `redis://:${process.env.REDIS_PASSWORD}@redis:6379`,
+    });
+
+    redisClient.on("error", (err) => {
+      console.error("Redis error:", err);
+    });
+
+    await redisClient.connect();
+    console.log("Conectado ao Redis");
+  } catch (err) {
+    console.error("Falha na conexão com Redis:", err);
+  }
+})();
+
+// Métricas do Prometheus
+const collectDefaultMetrics = prometheus.collectDefaultMetrics;
+collectDefaultMetrics({
+  register: prometheus.register,
+  timeout: 5000, // Intervalo de coleta
 });
 
-app.get("/", (req, res) => {
-    res.json({ message: "Hello World!" });
+// Métricas para monitorar o Redis
+const redisHealthGauge = new prometheus.Gauge({
+  name: "redis_health",
+  help: "Status da conexão com Redis (1 = saudável, 0 = não saudável)",
+  async collect() {
+    this.set(redisClient?.isReady ? 1 : 0);
+  },
+});
+
+// Rota de métricas
+app.get("/metrics", async (req, res) => {
+  try {
+    res.set("Content-Type", prometheus.register.contentType);
+    res.end(await prometheus.register.metrics());
+  } catch (err) {
+    res.status(500).end("Erro ao gerar métricas");
+  }
+});
+
+// Rota principal com cache via Redis
+app.get("/", async (req, res) => {
+  try {
+    const cachedData = await redisClient?.get("hello_world");
+    if (cachedData) {
+      return res.json({
+        message: "Hello World (from cache!)",
+        source: "redis",
+      });
+    }
+
+    // Simula processamento
+    await redisClient?.set(
+      "hello_world",
+      JSON.stringify({ message: "Hello World!" }),
+      {
+        EX: 30, // Expira em 30 segundos
+      }
+    );
+
+    res.json({
+      message: "Hello World!",
+      source: "fresh",
+    });
+  } catch (err) {
+    console.error(err);
+    res.json({
+      message: "Hello World (fallback!)",
+      error: err.message,
+    });
+  }
+});
+
+// Health check
+app.get("/health", (req, res) => {
+  const status = {
+    app: "OK",
+    redis: redisClient?.isReady ? "OK" : "NOK",
+  };
+  res.status(status.redis === "OK" ? 200 : 503).json(status);
 });
 
 app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`Servidor rodando na porta ${PORT}`);
+});
+
+// Graceful shutdown
+process.on("SIGTERM", async () => {
+  console.log("Encerrando...");
+  await redisClient?.quit();
+  process.exit(0);
 });

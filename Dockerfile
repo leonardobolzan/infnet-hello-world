@@ -8,6 +8,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install
 
+# Copia o .env para o container
+COPY .env ./
+
 # Copia o restante dos arquivos para dentro do container
 COPY . .
 
@@ -15,6 +18,6 @@ COPY . .
 EXPOSE 80
 
 # Comando para rodar a aplicação
-CMD ["node", "server.js"]
+CMD ["node", "--experimental-json-modules", "server.js"]
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 CMD wget --spider -q http://localhost:80 || exit 1
