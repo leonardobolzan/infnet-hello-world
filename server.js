@@ -10,7 +10,6 @@ let redisClient;
 (async () => {
   try {
     redisClient = redis.createClient({
-      // url: `redis://default:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:6379`
       url: `redis://:${process.env.REDIS_PASSWORD}@redis:6379`,
     });
 
