@@ -57,7 +57,7 @@ app.get("/", async (req, res) => {
     const cachedData = await redisClient?.get("hello_world");
     if (cachedData) {
       return res.json({
-        message: "Hello World (from cache!)",
+        message: "Hello World 2 (from cache!)",
         source: "redis",
       });
     }
@@ -65,20 +65,20 @@ app.get("/", async (req, res) => {
     // Simula processamento
     await redisClient?.set(
       "hello_world",
-      JSON.stringify({ message: "Hello World!" }),
+      JSON.stringify({ message: "Hello World 2!" }),
       {
         EX: 30, // Expira em 30 segundos
       }
     );
 
     res.json({
-      message: "Hello World!",
+      message: "Hello World 2!",
       source: "fresh",
     });
   } catch (err) {
     console.error(err);
     res.json({
-      message: "Hello World (fallback!)",
+      message: "Hello World 2 (fallback!)",
       error: err.message,
     });
   }
