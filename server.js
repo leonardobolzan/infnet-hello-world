@@ -40,6 +40,13 @@ const redisHealthGauge = new prometheus.Gauge({
   },
 });
 
+// Rota principal
+app.get("/", async (req, res) => {
+  return res.json({
+    message: "Hello World :)",
+  });
+});
+
 // Rota de métricas
 app.get("/metrics", async (req, res) => {
   try {
@@ -47,39 +54,6 @@ app.get("/metrics", async (req, res) => {
     res.end(await prometheus.register.metrics());
   } catch (err) {
     res.status(500).end("Erro ao gerar métricas");
-  }
-});
-
-// Rota principal com cache via Redis
-app.get("/", async (req, res) => {
-  try {
-    const cachedData = await redisClient?.get("hello_world");
-    if (cachedData) {
-      return res.json({
-        message: "Hello World 2 (from cache!)",
-        source: "redis",
-      });
-    }
-
-    // Simula processamento
-    await redisClient?.set(
-      "hello_world",
-      JSON.stringify({ message: "Hello World 2!" }),
-      {
-        EX: 30, // Expira em 30 segundos
-      }
-    );
-
-    res.json({
-      message: "Hello World 2!",
-      source: "fresh",
-    });
-  } catch (err) {
-    console.error(err);
-    res.json({
-      message: "Hello World 2 (fallback!)",
-      error: err.message,
-    });
   }
 });
 
