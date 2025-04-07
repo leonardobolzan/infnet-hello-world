@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass $${REDIS_PASSWORD}
+    environment:
+      - REDIS_PASSWORD_FILE=/run/secrets/redis_password
+    secrets:
+      - redis_password
+    volumes:
+      - redis_data:/data
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    networks:
+      - infnet_overlay-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+secrets:
+  redis_password:
+    external: true
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  infnet_overlay-net:
+    external: true
