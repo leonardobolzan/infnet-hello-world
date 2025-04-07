@@ -47,7 +47,7 @@ app.get("/", async (req, res) => {
   });
 });
 
-// Rota de métricas
+// Rota de métricas (prometheus)
 app.get("/metrics", async (req, res) => {
   try {
     res.set("Content-Type", prometheus.register.contentType);
