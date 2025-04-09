@@ -28,6 +28,9 @@
 
 ### Rotas
 
+- IMPORTANTE: Como foram utilizadas instâncias EC-2 na AWS (Free Tier), o IP público muda toda vez que as instâncias são interrompidas :)
+- Utilize o IP apenas como um exemplo de rota.
+
 | Link                                       | Rota                        | Descrição                                 |
 | ------------------------------------------ | --------------------------- | ----------------------------------------- |
 | [App](http://3.22.188.212)                 | http://3.22.188.212         | Aplicação acessível na porta 80 (default) |
